@@ -1,0 +1,13 @@
+FILE: employees.txt, LINE: 1 | Error: Validation failed | DATA: Іван, Петренко, 12.05.1990, 050-123-45-67, ivan.petrenko@gmail.com, Інженер
+
+FILE: employees.txt, LINE: 3 | Error: Validation failed | DATA: Андрій, Мельник, 25.07.1995, +380 (50) 3456 789, andrii.melnyk@company.ua, Менеджер
+
+FILE: employees.txt, LINE: 4 | Error: Validation failed | DATA: Марія, Шевчук, 14.02.1992, 067-456-78-90, maria.shevchuk@gmail.com, Дизайнер
+
+FILE: employees.txt, LINE: 6 | Error: Validation failed | DATA: Наталія, Ткаченко, 08.12.1993, +380 (67) 6789 012, nataliya.tkachenko@gmail.com, HR
+
+FILE: employees.txt, LINE: 7 | Error: Validation failed | DATA: Дмитро, Кравець, 17.03.1989, 063-789-01-23, dmytro.kravets@company.ua, Аналітик
+
+FILE: employees.txt, LINE: 8 | Error: Validation failed | DATA: Ірина, Савчук, 5.04.1991, 050-111-22-33, iryna.savchuk@gmail, Маркетолог
+
+FILE: employees.txt, LINE: 10 | Error: Validation failed | DATA: Оксана, Лисенко, 11.6.1990, +380 (50) 3333 444, oksana.lysenko@@mail.com, Тестувальник

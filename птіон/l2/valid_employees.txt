@@ -1,0 +1,3 @@
+Олена, Коваль, 03.11.1987, +38 (050) 234-56-78, olena.koval@yahoo.com, Бухгалтер | ORIGIN: employees.txt, LINE: 2
+Сергій, Бондар, 30.09.1985, +38 (067) 567-89-01, serhii.bondar@company.ua, Технік | ORIGIN: employees.txt, LINE: 5
+Павло, Романюк, 21.01.1994, +38 (050) 222-33-44, pavlo.romaniuk@gmail.com, Розробник | ORIGIN: employees.txt, LINE: 9

@@ -1,0 +1,10 @@
+1001, user_alpha, StrongPass!123, alpha.user@gmail.com, 2026-02-18
+1002, cool_dude, pass123, cool.dude@yahoo.com, 2024-12-10
+1003, lina_star, LinaSecure#2025, lina.star@gmail.com, 2025-06-01
+1004, tech_guy, techguy2024, tech.guy@mail.com, 2025-01-03
+1005, viktor88, V!ktorSecurePassword, viktor88@gmail.com, 2026-01-14
+1006, anna_k, short7!, anna.k@mail.com, 2023-11-20
+1007, max_power, MaxPowerSuper#2025, max.power@gmail.com, 2025-09-07
+1008, simple_user, simplepassword, simple.user@mail.com, 2024-07-15
+1009, olga_s, OlgaStrong!2026, olga.s@gmail.com, 2026-03-05
+1010, test_client, Test1234, test.client@mail.com, 2025-02-28
