@@ -60,7 +60,6 @@ def process_employees(file_list):
 
 
 
-import re
 import pickle
 from datetime import datetime, timedelta
 
@@ -76,7 +75,7 @@ def process_clients(filename):
 
     with open(filename, 'r', encoding='utf-8') as f:
         for line in f:
-            # Припускаємо формат: id, username, password, email, last_login
+            # формат: id, username, password, email, last_login
             parts = [p.strip() for p in line.strip().split(',')]
             if len(parts) < 5: continue
             
@@ -91,25 +90,22 @@ def process_clients(filename):
                 'last_login': last_login
             }
 
-            # 1. Перевірка дати входу (> 1 року тому)
+            
             if login_date < one_year_ago:
                 old_clients.append(client_info)
             else:
-                # 3. Система сповіщення (зайшли менше року тому)
                 to_notify.append(email)
 
-            # 2. Перевірка пароля
             if not re.match(PASSWORD_STRICT, pwd):
                 bad_passwords.append(client_info)
 
-    # Збереження у pickle
     with open('inactive_clients.pkl', 'wb') as f:
         pickle.dump(old_clients, f)
         
     with open('weak_passwords.pkl', 'wb') as f:
         pickle.dump(bad_passwords, f)
 
-    # Вивід сповіщень
+
     print("--- Система сповіщення про оновлення паролю ---")
     for email in to_notify:
         print(f"Надсилання листа на {email}: Будь ласка, оновіть свій пароль згідно з новими стандартами безпеки!")

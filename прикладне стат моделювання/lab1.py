@@ -121,187 +121,203 @@
 
 
 
-
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, RadioButtons, TextBox
+from typing import List, Any
+
 
 class DistributionSimulator:
-    def __init__(self):
-        # Параметри Пуассона
-        self.lam = 3 / 17
+    """
+    Симулятор розподілів (Пуассона та Біноміального).
+    Візуалізує теоретичні ймовірності та генерує емпіричні дані 
+    за допомогою методу оберненого перетворення (Inverse Transform Sampling).
+    """
+
+    def __init__(self, 
+                 poisson_lam: float = 3 / 17, 
+                 binom_n: int = 102, 
+                 binom_p: float = 11 / 21) -> None:
         
-        # Параметри Біноміального
-        self.n_bin = 102
-        self.p_bin = 11 / 21
+        # Параметри розподілів
+        self._lam: float = poisson_lam
+        self._n_bin: int = binom_n
+        self._p_bin: float = binom_p
         
-        self.current_dist = 'Poisson'
-        self.num_points = 1
+        # Стан симулятора
+        self._current_dist: str = 'Poisson'
+        self._num_points: int = 1
         
         # Зберігання згенерованих даних
-        self.gen_k = []
-        self.gen_gamma = []
+        self._gen_k: List[int] = []
+        self._gen_gamma: List[float] = []
         
-        self.setup_math()
-        self.setup_ui()
- 
-    def setup_math(self):
-        """Обчислює PMF (ймовірності) та CDF (межі інтервалів) суто математично, без готових чорних скриньок"""
-        # Пуассон (рахуємо до k=10, цього достатньо для λ=0.176)
-        self.poisson_k = np.arange(0, 10)
-        p_poisson = [np.exp(-self.lam)]
+        # Ініціалізація
+        self._setup_math()
+        self._setup_ui()
+
+    def _setup_math(self) -> None:
+        """
+        Обчислює PMF (ймовірності) та CDF (межі інтервалів) суто математично.
+        """
+        # --- Розподіл Пуассона ---
+        self._poisson_k: np.ndarray = np.arange(0, 10)
+        p_poisson: List[float] = [np.exp(-self._lam)]
+        
         for k in range(1, 10):
-            p_poisson.append(p_poisson[-1] * self.lam / k)
-        self.poisson_pmf = np.array(p_poisson)
-        self.poisson_cdf = np.cumsum(self.poisson_pmf)
+            p_poisson.append(p_poisson[-1] * self._lam / k)
+            
+        self._poisson_pmf: np.ndarray = np.array(p_poisson)
+        self._poisson_cdf: np.ndarray = np.cumsum(self._poisson_pmf)
 
-        # Біноміальний (рахуємо для всіх k від 0 до n)
-        self.binom_k = np.arange(0, self.n_bin + 1)
-        p_binom = [(1 - self.p_bin)**self.n_bin]
-        for k in range(1, self.n_bin + 1):
-            next_p = p_binom[-1] * ((self.n_bin - k + 1) / k) * (self.p_bin / (1 - self.p_bin))
+        # --- Біноміальний розподіл ---
+        self._binom_k: np.ndarray = np.arange(0, self._n_bin + 1)
+        p_binom: List[float] = [(1 - self._p_bin) ** self._n_bin]
+        
+        for k in range(1, self._n_bin + 1):
+            next_p = p_binom[-1] * ((self._n_bin - k + 1) / k) * (self._p_bin / (1 - self._p_bin))
             p_binom.append(next_p)
-        self.binom_pmf = np.array(p_binom)
-        self.binom_cdf = np.cumsum(self.binom_pmf)
+            
+        self._binom_pmf: np.ndarray = np.array(p_binom)
+        self._binom_cdf: np.ndarray = np.cumsum(self._binom_pmf)
 
-    def setup_ui(self):
-        # Створюємо 2 графіки: зверху розподіл (3/4 висоти), знизу відрізок (1/4 висоти)
-        self.fig, (self.ax_dist, self.ax_line) = plt.subplots(2, 1, figsize=(10, 8), gridspec_kw={'height_ratios': [3, 1]})
+    def _setup_ui(self) -> None:
+        """
+        Налаштовує інтерфейс користувача (графіки та віджети Matplotlib).
+        """
+        self.fig, (self.ax_dist, self.ax_line) = plt.subplots(
+            2, 1, 
+            figsize=(10, 8), 
+            gridspec_kw={'height_ratios': [3, 1]}
+        )
+        self.fig.canvas.manager.set_window_title("Симулятор розподілів")
         plt.subplots_adjust(bottom=0.3, hspace=0.3)
 
-        # Додаємо віджети
+        # --- Віджети ---
         ax_radio = plt.axes([0.1, 0.05, 0.2, 0.15])
         self.radio = RadioButtons(ax_radio, ('Poisson', 'Binomial'))
-        self.radio.on_clicked(self.change_dist)
+        self.radio.on_clicked(self._on_change_dist)
 
         ax_text = plt.axes([0.45, 0.15, 0.15, 0.05])
-        self.textbox = TextBox(ax_text, 'К-сть точок (N): ', initial='1')
-        self.textbox.on_submit(self.update_count)
+        self.textbox = TextBox(ax_text, 'К-сть точок (N): ', initial=str(self._num_points))
+        self.textbox.on_submit(self._on_update_count)
 
-        ax_btn = plt.axes([0.45, 0.05, 0.2, 0.08])
-        self.btn = Button(ax_btn, 'Згенерувати')
-        self.btn.on_clicked(self.generate)
+        ax_btn_gen = plt.axes([0.45, 0.05, 0.2, 0.08])
+        self.btn_gen = Button(ax_btn_gen, 'Згенерувати')
+        self.btn_gen.on_clicked(self._on_generate)
         
-        axC_btn = plt.axes([0.75, 0.05, 0.1, 0.04])
-        self.btnC = Button(axC_btn, 'Очистити')
-        self.btnC.on_clicked(self.clear)
+        ax_btn_clear = plt.axes([0.75, 0.05, 0.15, 0.05])
+        self.btn_clear = Button(ax_btn_clear, 'Очистити')
+        self.btn_clear.on_clicked(self._on_clear)
 
-        self.draw_theoretical()
+        self._draw_axes()
         plt.show()
 
-    def update_count(self, text):
+    def _on_update_count(self, text: str) -> None:
+        """Обробник зміни кількості точок для генерації."""
         try:
             val = int(text)
-            self.num_points = max(1, val) # Не менше 1
+            self._num_points = max(1, val)  # Захист від від'ємних значень та нуля
         except ValueError:
-            self.textbox.set_val(str(self.num_points)) # Повертаємо попереднє дійсне значення
+            self.textbox.set_val(str(self._num_points))
 
-    def change_dist(self, label):
-        self.current_dist = label
-        self.gen_k.clear()
-        self.gen_gamma.clear()
-        self.draw_theoretical()
-        self.fig.canvas.draw_idle()
+    def _on_change_dist(self, label: str) -> None:
+        """Обробник перемикання типу розподілу."""
+        self._current_dist = label
+        self._gen_k.clear()
+        self._gen_gamma.clear()
+        self._draw_axes()
 
-    def draw_theoretical(self):
+    def _on_clear(self, event: Any) -> None:
+        """Обробник кнопки очищення згенерованих даних."""
+        self._gen_k.clear()
+        self._gen_gamma.clear()
+        self._draw_axes()
+
+    def _on_generate(self, event: Any) -> None:
+        """Обробник кнопки генерації нових точок."""
+        if self._current_dist == 'Poisson':
+            k_arr, cdf = self._poisson_k, self._poisson_cdf
+        else:
+            k_arr, cdf = self._binom_k, self._binom_cdf
+
+        # 1. Генерація масиву рівномірно розподілених випадкових чисел
+        gammas = np.random.uniform(0, 1, self._num_points)
+        
+        # 2. Бінарний пошук індексів інтервалів для всього масиву одразу
+        indices = np.searchsorted(cdf, gammas)
+        
+        # 3. Переведення індексів у значення k
+        k_results = k_arr[np.clip(indices, 0, len(k_arr) - 1)]
+
+        self._gen_k.extend(k_results.tolist())
+        self._gen_gamma.extend(gammas.tolist())
+        
+        print(f"Згенеровано {self._num_points} точок. Всього: {len(self._gen_k)}")
+        self._draw_axes()
+
+    def _draw_axes(self) -> None:
+        """
+        Повністю перемальовує графіки. Це надійніше, ніж видаляти окремі елементи.
+        """
         self.ax_dist.clear()
         self.ax_line.clear()
 
-        if self.current_dist == 'Poisson':
-            k_arr = self.poisson_k
-            pmf = self.poisson_pmf
-            cdf = self.poisson_cdf
-            title = f'Розподіл Пуассона (λ ≈ 0.176)'
-            self.ax_dist.set_xlim(-0.5, 4.5) # Обрізаємо порожній хвіст
+        # --- Теоретичні дані ---
+        if self._current_dist == 'Poisson':
+            k_arr, pmf, cdf = self._poisson_k, self._poisson_pmf, self._poisson_cdf
+            title = f'Розподіл Пуассона (λ ≈ {self._lam:.3f})'
+            self.ax_dist.set_xlim(-0.5, 4.5)
             
-            # Малюємо інтервали на нижньому графіку
+            # Інтервали на нижньому графіку
             prev = 0
             colors = plt.cm.Set3.colors
-            for i, p in enumerate(cdf[:5]): # Візуалізуємо тільки перші 5 зон, бо далі вони мікроскопічні
+            for i, p in enumerate(cdf[:5]): 
                 self.ax_line.axvspan(prev, p, alpha=0.5, color=colors[i % len(colors)])
                 mid = (prev + p) / 2
-                if p - prev > 0.05: # Підписуємо тільки достатньо широкі інтервали
+                if p - prev > 0.05:
                     self.ax_line.text(mid, 0.5, f'k={i}', ha='center', va='center', rotation=90)
                 prev = p
         else:
-            k_arr = self.binom_k
-            pmf = self.binom_pmf
-            cdf = self.binom_cdf
-            title = f'Біноміальний розподіл (n=102, p≈0.524)'
-            
-            # 1. Центруємо графік навколо мат. сподівання (~53.4)
+            k_arr, pmf, cdf = self._binom_k, self._binom_pmf, self._binom_cdf
+            title = f'Біноміальний розподіл (n={self._n_bin}, p≈{self._p_bin:.3f})'
             self.ax_dist.set_xlim(30, 75) 
-            
             self.ax_line.axvspan(0, 1, alpha=0.1, color='blue')
             
-            # 2. Малюємо лінії меж для тих k, де є реальні зміни ймовірності (наприклад, від 35 до 70)
+            # Лінії меж
             for p in cdf[35:70]:
                 self.ax_line.axvline(p, color='white', linewidth=0.5)
 
-        # Відмальовуємо сірий бекграунд (теоретичний розподіл)
-        self.ax_dist.bar(k_arr, pmf, color='gray', alpha=0.3, width=1.0, edgecolor='black', label='Теоретична ймовірність')
+        # Відмальовуємо теоретичний розподіл (сірий фон)
+        self.ax_dist.bar(k_arr, pmf, color='gray', alpha=0.3, width=1.0, 
+                         edgecolor='black', label='Теоретична ймовірність')
         self.ax_dist.set_title(title)
         self.ax_dist.set_ylabel('Відносна частота / Ймовірність')
+
+        # --- Емпіричні дані (якщо є) ---
+        if self._gen_k:
+            unique_k, counts = np.unique(self._gen_k, return_counts=True)
+            frequencies = counts / len(self._gen_k)
+            
+            self.ax_dist.bar(unique_k, frequencies, color='red', alpha=0.5, 
+                             width=0.6, label='Емпірична частота')
+            
+            # Відображення тільки останніх N згенерованих точок на відрізку
+            last_n_gammas = self._gen_gamma[-self._num_points:]
+            y_jitter = np.random.uniform(0.2, 0.8, len(last_n_gammas))
+            self.ax_line.plot(last_n_gammas, y_jitter, 'ko', markersize=3, alpha=0.5)
+
         self.ax_dist.legend(loc='upper right')
 
-        # Налаштування нижнього графіка
+        # --- Налаштування нижнього графіка ---
         self.ax_line.set_xlim(0, 1)
         self.ax_line.set_ylim(0, 1)
         self.ax_line.get_yaxis().set_visible(False)
         self.ax_line.set_title("Відрізок [0, 1] (Інтервали ймовірностей)")
 
-    def clear(self, event):        
-        self.gen_k.clear()
-        self.gen_gamma.clear()
-        self.update_plots()
-        
-    def generate(self, event):
-        if self.current_dist == 'Poisson':
-            k_arr, cdf = self.poisson_k, self.poisson_cdf
-        else:
-            k_arr, cdf = self.binom_k, self.binom_cdf
-
-        # 1. Відчитуємо масив випадкових чисел γ
-        gammas = np.random.uniform(0, 1, self.num_points)
-        
-        # 2. Шукаємо індекси інтервалів для всього масиву одразу (бінарний пошук)
-        indices = np.searchsorted(cdf, gammas)
-        
-        # 3. Переводимо індекси у значення k
-        k_results = k_arr[np.clip(indices, 0, len(k_arr) - 1)]
-
-        self.gen_k.extend(k_results)
-        self.gen_gamma.extend(gammas)
-        print(len(self.gen_k), "точок згенеровано.")
-        print(len(self.gen_gamma), "γ згенеровано.")
-        # self.draw_theoretical()
-        self.update_plots()
-        # self.fig.canvas.draw_idle()
-
-    def update_plots(self):
-        # Видаляємо старі емпіричні дані (щоб не нашаровувати)
-        for patch in reversed(self.ax_dist.patches[len(self.binom_k if self.current_dist == 'Binomial' else self.poisson_k):]):
-            patch.remove()
-        [line.remove() for line in self.ax_line.lines[1:]] # Видаляємо старі точки
-
-        # Рахуємо унікальні згенеровані k та їх частоту
-        unique_k, counts = np.unique(self.gen_k, return_counts=True)
-        frequencies = counts / len(self.gen_k)
-
-        # Накладаємо емпіричний розподіл
-        self.ax_dist.bar(unique_k, frequencies, color='red', alpha=0.5, width=0.6, label='Емпірична частота' if len(self.gen_k) == self.num_points else "")
-        
-        # Додаємо точки на відрізок (з Y-розкидом, щоб вони не злипались в одну лінію)
-        y_jitter = np.random.uniform(0.2, 0.8, len(self.gen_gamma[-self.num_points:]))
-        self.ax_line.plot(self.gen_gamma[-self.num_points:], y_jitter, 'ko', markersize=3, alpha=0.5)
-
-        # Оновлюємо легенду та відмальовуємо
-        handles, labels = self.ax_dist.get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))
-        self.ax_dist.legend(by_label.values(), by_label.keys(), loc='upper right')
-        
         self.fig.canvas.draw_idle()
 
-# Запуск програми
+
 if __name__ == '__main__':
+    # Запуск програми
     app = DistributionSimulator()
