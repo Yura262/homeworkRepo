@@ -30,6 +30,13 @@ block_4_5 = np.maximum(t4, t5)
 big_parallel_block = np.maximum(block_2_3, block_4_5)
 block_7_8 = np.maximum(t7, t8)
 
+print("block_2_3",np.average(block_2_3))
+print("block_4_5",np.average(block_4_5))
+print("big_parallel_block",np.average(big_parallel_block))
+print("block_7_8",np.average(block_7_8))
+
+
+
 # загальний час життя для кожної ітерації
 T_array = np.minimum.reduce([t1, big_parallel_block, t6, block_7_8])
 
