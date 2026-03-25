@@ -1,0 +1,5 @@
+directory: ..\l1, size: 70528528
+directory: ..\l2, size: 629451
+directory: ..\ind1, size: 387140
+directory: ..\lk1, size: 69963
+directory: ..\l3, size: 10704
