@@ -1,29 +1,71 @@
 import numpy as np
 
-N = 100000
+N = 1000
 i = 10
+
+
+import random
+import math
 
 def calc_exp(k, i_val=10):
     variance = (i_val + 8 - k) / (2 * i_val + 1)
     print(f"експонентний розподіл (k={k}):")
     print("дисперсія експонентного розподілу", variance)
 
-    val = np.random.exponential(scale=np.sqrt(variance), size=N)    
-    print("середнє значення змодельованих значень",np.average(val),"\n")
+    scale = math.sqrt(variance)
+    val = []
+    
+    for _ in range(N):
+        u = random.random()
+        while u == 1.0: 
+            u = random.random()
+        x = -scale * math.log(1.0 - u)
+        val.append(x)
+
+    average = sum(val) / N
+    print("середнє значення змодельованих значень", average, "\n")
 
     return val 
+
+def normal_dist(x, mean, std_dev):
+    coefficient = 1.0 / (std_dev * math.sqrt(2.0 * math.pi))
+    e = -0.5 * ((x - mean) / std_dev) ** 2
+    return coefficient * math.exp(e)
 
 def calc_norm(k, i_val=10):
     mean = (i_val + k) / (2 * i_val + 1)
     variance = (i_val + 7 - k) / (2 * i_val + 3)
-    std_dev = np.sqrt(variance)
+    std_dev = math.sqrt(max(0, variance))
+    
     print(f"нормальний розподіл (k={k}):")
     print("дисперсія", variance)
-    print("мат сподівання", std_dev)
-    val = np.clip(np.random.normal(mean, std_dev, size=N), 0, None) 
-    print("середнє значення змодельованих значень",np.average(val),"\n")
+    print("стандартнe відхилення", std_dev) 
+    
+    val = []
+    
+    max_height = normal_dist(mean, mean, std_dev)
+    min_x = mean - 5 * std_dev
+    max_x = mean + 5 * std_dev
+    
+    for _ in range(N):
+        while True:
+            x_candidate = random.uniform(min_x, max_x)
+            y_candidate = random.uniform(0, max_height)
+            
+            fx = normal_dist(x_candidate, mean, std_dev)
+            
+            if y_candidate <= fx:
+                x_clipped = max(0, x_candidate)
+                val.append(x_clipped)
+                break 
+
+    if N > 0:
+        average = sum(val) / N
+        print("середнє значення змодельованих значень", average, "\n")
 
     return val
+
+
 
 
 t1=calc_norm(1)

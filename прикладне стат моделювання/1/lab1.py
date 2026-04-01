@@ -535,10 +535,209 @@
 
 
 
+# import matplotlib.pyplot as plt
+# from matplotlib.widgets import Button, TextBox
+# import random
+
+
+# def get_cumulative_sum(probabilities):
+#     cdf = []
+#     total = 0.0
+#     for p in probabilities:
+#         total += p
+#         cdf.append(total)
+#     return cdf
+
+# def get_frequencies(data_list):
+#     """Calculates unique values and their relative frequencies in a list."""
+#     if not data_list:
+#         return [], []
+    
+#     counts = {}
+#     for item in data_list:
+#         counts[item] = counts.get(item, 0) + 1
+        
+#     unique_vals = list(counts.keys())
+#     unique_vals.sort()
+    
+#     total_items = len(data_list)
+#     frequencies = [counts[val] / total_items for val in unique_vals]
+    
+#     return unique_vals, frequencies
+
+
+
+
+
+
+# class VariableModel:
+#     """
+#     Statistical modeling class
+#     Takes any set of discrete values and their corresponding CDF,
+#     and models random variables.
+#     """
+#     def __init__(self, values, cdf):
+#         self.values = values
+#         self.cdf = cdf
+#     def search_sorted_index(self,cdf, gamma):
+#         for i, val in enumerate(cdf):
+#             if gamma <= val:
+#                 return i
+#         return len(cdf) - 1
+#     def sample(self, num_points):
+#         gammas = [random.random() for _ in range(num_points)]
+#         sampled_results = []
+        
+#         for g in gammas:
+#             index = self.search_sorted_index(self.cdf, g)
+#             sampled_results.append(self.values[index])
+            
+#         return sampled_results, gammas
+
+
+# class BinomialModel:
+#     """Generating a Binomial Distribution."""
+#     def __init__(self, n, p):
+#         self.n = n
+#         self.p = p
+#         self.k_values = []
+#         self.pmf = []
+#         self.cdf = []
+#         self._calculate()
+
+#     def _calculate(self):
+#         self.k_values = list(range(self.n + 1))
+#         self.pmf = [(1 - self.p)**self.n]
+        
+#         for k in range(1, self.n + 1):
+#             next_p = self.pmf[-1] * ((self.n - k + 1) / k) * (self.p / (1 - self.p))
+#             self.pmf.append(next_p)
+            
+#         self.cdf = get_cumulative_sum(self.pmf)
+
+
+
+# class DistributionSimulatorUI:
+#     def __init__(self):        
+#         # Setup Models
+#         self.binomial_model = BinomialModel(n=102, p=11/21)
+#         self.sampler = VariableModel(
+#             values=self.binomial_model.k_values, 
+#             cdf=self.binomial_model.cdf
+#         )
+        
+#         # State
+#         self.num_points = 1
+#         self.history_k = []
+#         self.history_gamma = []
+        
+#         # Initialize UI
+#         self.setup_ui()
+
+#     def setup_ui(self):
+#         self.fig, (self.ax_dist, self.ax_line) = plt.subplots(
+#             2, 1, figsize=(10, 8), gridspec_kw={'height_ratios': [60, 1]}
+#         )
+#         self.ax_line.set_visible(False)
+#         plt.subplots_adjust(bottom=0.3, hspace=0.3)
+
+#         # Text Box
+#         ax_text = plt.axes([0.45, 0.15, 0.15, 0.05])
+#         self.textbox = TextBox(ax_text, 'К-сть точок (N): ', initial='1')
+#         self.textbox.on_submit(self.update_count)
+
+#         # Button
+#         ax_btn = plt.axes([0.45, 0.05, 0.2, 0.08])
+#         self.btn = Button(ax_btn, 'Згенерувати')
+#         self.btn.on_clicked(self.on_generate_clicked)
+        
+#         self.draw_theoretical()
+#         plt.show()
+
+#     def update_count(self, text):
+#         try:
+#             val = int(text)
+#             self.num_points = max(1, val)
+#         except ValueError:
+#             self.textbox.set_val(str(self.num_points))
+
+#     def draw_theoretical(self):
+#         self.ax_dist.clear()
+#         self.ax_line.clear()
+
+#         # Fetch data from our model
+#         k_arr = self.binomial_model.k_values
+#         pmf = self.binomial_model.pmf
+#         cdf = self.binomial_model.cdf
+        
+#         title = f'Біномний розподіл (n={self.binomial_model.n}, p≈{self.binomial_model.p:.3f})'
+        
+#         self.ax_dist.set_xlim(30, 75) 
+#         self.ax_line.axvspan(0, 1, alpha=0.1, color='blue')
+        
+#         # Draw CDF boundaries on the line plot
+#         for p in cdf[35:70]:
+#             self.ax_line.axvline(p, color='white', linewidth=0.5)
+
+#         self.ax_dist.bar(k_arr, pmf, color='gray', alpha=0.3, width=1.0, edgecolor='black', label='Теоретична ймовірність')
+#         self.ax_dist.set_title(title)
+#         self.ax_dist.set_ylabel('Відносна частота / Ймовірність')
+#         self.ax_dist.legend(loc='upper right')
+
+#         self.ax_line.set_xlim(0, 1)
+#         self.ax_line.set_ylim(0, 1)
+#         self.ax_line.get_yaxis().set_visible(False)
+#         self.ax_line.set_title("Відрізок [0, 1] (Інтервали ймовірностей)")
+
+#     def on_generate_clicked(self, event):
+#         # Delegate math generation to the separated sampler
+#         new_k, new_gammas = self.sampler.sample(self.num_points)
+        
+#         self.history_k.extend(new_k)
+#         self.history_gamma.extend(new_gammas)
+        
+#         print(f"{len(self.history_k)} точок згенеровано.")
+#         print(f"{len(self.history_gamma)} γ згенеровано.")
+#         self.update_plots()
+
+#     def update_plots(self):
+#         # Remove old empirical bars
+#         for patch in reversed(self.ax_dist.patches[len(self.binomial_model.k_values):]):
+#             patch.remove()
+            
+#         # Remove old scatter points on the line
+#         [line.remove() for line in self.ax_line.lines[1:]] 
+
+#         # Calculate empirical frequencies using our custom math utility
+#         unique_k, frequencies = get_frequencies(self.history_k)
+
+#         # Draw updated empirical data
+#         label = 'Емпірична частота' if len(self.history_k) == self.num_points else ""
+#         self.ax_dist.bar(unique_k, frequencies, color='red', alpha=0.5, width=0.6, label=label)
+        
+#         # Jitter y-values for the line plot (using standard random)
+#         recent_gammas = self.history_gamma[-self.num_points:]
+#         y_jitter = [random.uniform(0.2, 0.8) for _ in range(len(recent_gammas))]
+#         self.ax_line.plot(recent_gammas, y_jitter, 'ko', markersize=3, alpha=0.5)
+
+#         # Fix legend duplicates
+#         handles, labels = self.ax_dist.get_legend_handles_labels()
+#         by_label = dict(zip(labels, handles))
+#         self.ax_dist.legend(by_label.values(), by_label.keys(), loc='upper right')
+        
+#         self.fig.canvas.draw_idle()
+
+# if __name__ == '__main__':
+#     app = DistributionSimulatorUI()
+
+
+
+
+
+
 import matplotlib.pyplot as plt
 from matplotlib.widgets import Button, TextBox
 import random
-
 
 def get_cumulative_sum(probabilities):
     cdf = []
@@ -566,10 +765,6 @@ def get_frequencies(data_list):
     return unique_vals, frequencies
 
 
-
-
-
-
 class VariableModel:
     """
     Statistical modeling class
@@ -579,11 +774,13 @@ class VariableModel:
     def __init__(self, values, cdf):
         self.values = values
         self.cdf = cdf
-    def search_sorted_index(cdf, gamma):
+
+    def search_sorted_index(self, cdf, gamma):
         for i, val in enumerate(cdf):
             if gamma <= val:
                 return i
         return len(cdf) - 1
+
     def sample(self, num_points):
         gammas = [random.random() for _ in range(num_points)]
         sampled_results = []
@@ -616,22 +813,22 @@ class BinomialModel:
         self.cdf = get_cumulative_sum(self.pmf)
 
 
-
 class DistributionSimulatorUI:
     def __init__(self):        
-        # Setup Models
         self.binomial_model = BinomialModel(n=102, p=11/21)
         self.sampler = VariableModel(
             values=self.binomial_model.k_values, 
             cdf=self.binomial_model.cdf
         )
         
-        # State
         self.num_points = 1
         self.history_k = []
         self.history_gamma = []
+
+        self.emp_vlines = None
+        self.emp_dots = None
+        self.ax_line_scatter = None
         
-        # Initialize UI
         self.setup_ui()
 
     def setup_ui(self):
@@ -640,7 +837,7 @@ class DistributionSimulatorUI:
         )
         self.ax_line.set_visible(False)
         plt.subplots_adjust(bottom=0.3, hspace=0.3)
-
+        plt.grid(True,linestyle="--",alpha=0.8)
         # Text Box
         ax_text = plt.axes([0.45, 0.15, 0.15, 0.05])
         self.textbox = TextBox(ax_text, 'К-сть точок (N): ', initial='1')
@@ -665,7 +862,6 @@ class DistributionSimulatorUI:
         self.ax_dist.clear()
         self.ax_line.clear()
 
-        # Fetch data from our model
         k_arr = self.binomial_model.k_values
         pmf = self.binomial_model.pmf
         cdf = self.binomial_model.cdf
@@ -675,11 +871,13 @@ class DistributionSimulatorUI:
         self.ax_dist.set_xlim(30, 75) 
         self.ax_line.axvspan(0, 1, alpha=0.1, color='blue')
         
-        # Draw CDF boundaries on the line plot
         for p in cdf[35:70]:
             self.ax_line.axvline(p, color='white', linewidth=0.5)
 
-        self.ax_dist.bar(k_arr, pmf, color='gray', alpha=0.3, width=1.0, edgecolor='black', label='Теоретична ймовірність')
+
+        self.ax_dist.vlines(x=k_arr, ymin=0, ymax=pmf, color='gray', linestyle='dashed', linewidth=1.5, alpha=0.5)
+        self.ax_dist.plot(k_arr, pmf, 'o', color='gray', markersize=5, alpha=0.7, label='Теоретична ймовірність')
+        
         self.ax_dist.set_title(title)
         self.ax_dist.set_ylabel('Відносна частота / Ймовірність')
         self.ax_dist.legend(loc='upper right')
@@ -701,26 +899,28 @@ class DistributionSimulatorUI:
         self.update_plots()
 
     def update_plots(self):
-        # Remove old empirical bars
-        for patch in reversed(self.ax_dist.patches[len(self.binomial_model.k_values):]):
-            patch.remove()
-            
-        # Remove old scatter points on the line
-        [line.remove() for line in self.ax_line.lines[1:]] 
 
-        # Calculate empirical frequencies using our custom math utility
+        if self.emp_vlines is not None:
+            self.emp_vlines.remove()
+        if self.emp_dots is not None:
+            self.emp_dots[0].remove()
+        if self.ax_line_scatter is not None:
+            self.ax_line_scatter[0].remove()
+
         unique_k, frequencies = get_frequencies(self.history_k)
 
-        # Draw updated empirical data
-        label = 'Емпірична частота' if len(self.history_k) == self.num_points else ""
-        self.ax_dist.bar(unique_k, frequencies, color='red', alpha=0.5, width=0.6, label=label)
+        label = 'Емпірична частота' if len(self.history_k) == self.num_points else "Емпірична частота"
         
-        # Jitter y-values for the line plot (using standard random)
+        self.emp_vlines = self.ax_dist.vlines(x=unique_k, ymin=0, ymax=frequencies, color='red', 
+                                              linestyle='dashed', linewidth=1.5, alpha=0.6)
+
+        self.emp_dots = self.ax_dist.plot(unique_k, frequencies, 'ro', markersize=4, label=label)
+        
+
         recent_gammas = self.history_gamma[-self.num_points:]
         y_jitter = [random.uniform(0.2, 0.8) for _ in range(len(recent_gammas))]
-        self.ax_line.plot(recent_gammas, y_jitter, 'ko', markersize=3, alpha=0.5)
+        self.ax_line_scatter = self.ax_line.plot(recent_gammas, y_jitter, 'ko', markersize=3, alpha=0.5)
 
-        # Fix legend duplicates
         handles, labels = self.ax_dist.get_legend_handles_labels()
         by_label = dict(zip(labels, handles))
         self.ax_dist.legend(by_label.values(), by_label.keys(), loc='upper right')
@@ -729,3 +929,4 @@ class DistributionSimulatorUI:
 
 if __name__ == '__main__':
     app = DistributionSimulatorUI()
+    

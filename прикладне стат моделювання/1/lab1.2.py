@@ -271,7 +271,7 @@ class ContinuousSimulator:
             'x_max': 3.0,                         # Верхня межа інтервалу
             'pdf': lambda x: (x - 1) / 2,         # Похідна від F(x)
             'cdf': lambda x: ((x - 1)**2) / 4,    # Функція розподілу
-            'inv_cdf': lambda g: 1 + 2 * np.sqrt(g) # Обернена функція 
+            'inv_cdf': lambda g:1 + 2 * np.sqrt(g) # Обернена функція 
         }
         }
         
@@ -341,8 +341,8 @@ class ContinuousSimulator:
         self.ax_cdf.legend(loc='upper left')
 
     def generate(self, event):
-        gammas = np.random.uniform(0, 1, self.num_points)
-        
+        gammas = np.random.rand(self.num_points)#.uniform(0, 1, self.num_points)
+        print([float(val) for val in  list(gammas)])
         xs = self.dist['inv_cdf'](gammas)
         
         self.gen_gamma.extend(gammas)
@@ -353,7 +353,7 @@ class ContinuousSimulator:
     def update_plots(self, new_gammas, new_xs):
         self.draw_theoretical()
         
-        self.ax_pdf.hist(self.gen_x, bins=30, density=True, color='red', alpha=0.5, 
+        self.ax_pdf.hist(self.gen_x, bins='auto', density=True, color='red', alpha=0.5, 
                          edgecolor='darkred', label=f'Емпірична густина (Всього: {len(self.gen_x)})')
         self.ax_pdf.legend(loc='upper left')
 
