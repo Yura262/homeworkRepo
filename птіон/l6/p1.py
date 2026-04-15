@@ -2,7 +2,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 
-n = 34
+n = 4
 m = n - 1
 
 # Генерація графів
@@ -38,11 +38,32 @@ plt.show()
 G_combined = nx.disjoint_union_all([K_n, K_nm, C_m])
 
 # Додавання довільних ребер (мостів) між компонентами
-# Компонента 1 (K_n) має вершини від 0 до 33
-# Компонента 2 (K_nm) має вершини від 34 до 100
-# Компонента 3 (C_m) має вершини від 101 до 133
-G_combined.add_edge(0, 34)
-G_combined.add_edge(34, 101)
+# Компонента 1 (K_n) має вершини від 0 до 3
+# Компонента 2 (K_nm) має вершини від 4 до 10
+# Компонента 3 (C_m) має вершини від 11 до 13
+G_combined.add_edge(0, 4)
+G_combined.add_edge(10, 11)
+
+
+
+color_map = []
+for node in G_combined:
+    if node < 4:  # K_n nodes (0-3)
+        color_map.append('blue')
+    elif node < 11:  # K_nm nodes (4-10)
+        color_map.append('green')
+    else:  # C_m nodes (11-13)
+        color_map.append('red')
+        
+plt.figure(figsize=(10, 8))
+pos = nx.spring_layout(G_combined, seed=42) # seed for consistent layout
+
+nx.draw(G_combined, pos, with_labels=True, node_color=color_map, 
+        edge_color='gray', node_size=500, font_size=10)
+plt.title("Combined Graph with Bridges")
+plt.show()
+
+
 
 # Виведення результатів
 print(f"\nКількість вершин у новому графі: {G_combined.number_of_nodes()}")
