@@ -15,22 +15,11 @@ class RandomSearchMath:
         """f(x) = -x1 - 2x2 + x2^2"""
         return -x[0] - 2*x[1] + x[1]**2
 
-    def is_feasible(self, x):
+    def in_boundaries(self, x):
         if x[0] < 0 or x[1] < 0: return False
         if 3*x[0] + 2*x[1] > 6: return False
         if x[0] + 2*x[1] > 4: return False
         return True
-
-    def generate_probes_(self, a, m):
-        xi_0 = np.random.randn(m, 2)
-        xi_0 /= np.linalg.norm(xi_0, axis=1)[:, np.newaxis]
-        
-
-        xi = xi_0 + self.w
-        xi /= np.linalg.norm(xi, axis=1)[:, np.newaxis]
-        
-        probes = self.current_x + a * xi
-        return probes, xi
     
     def generate_probes(self, a, m):
 
@@ -57,7 +46,7 @@ class RandomSearchMath:
     def perform_step(self, a, m):
         probes, directions = self.generate_probes(a, m)
         
-        valid_indices = [i for i, p in enumerate(probes) if self.is_feasible(p)]
+        valid_indices = [i for i, p in enumerate(probes) if self.in_boundaries(p)]
         if not valid_indices:
             return None, probes, None 
 
@@ -72,7 +61,7 @@ class RandomSearchMath:
             step_vec = -(best_dir / a) * delta_f
             x_new = self.current_x + step_vec
 
-            if not self.is_feasible(x_new):
+            if not self.in_boundaries(x_new):
                 x_new = best_probe
             
             delta_x = x_new - self.current_x
@@ -94,7 +83,7 @@ class Visualizer:
         self.fig, self.ax = plt.subplots(figsize=(10, 8))
         plt.subplots_adjust(bottom=0.2)
         
-        self.a_slider = Slider(plt.axes([0.15, 0.1, 0.25, 0.03]), 'Крок (a)', 0.1, 1.5, valinit=0.5)
+        self.a_slider = Slider(plt.axes([0.15, 0.1, 0.25, 0.03]), 'Крок (a)', 0.01, 1.5, valinit=0.1)
         self.m_slider = Slider(plt.axes([0.55, 0.1, 0.25, 0.03]), 'Проби (m)', 5, 50, valinit=15, valfmt='%0.0f')
         
         self.btn_next = Button(plt.axes([0.8, 0.025, 0.1, 0.04]), 'Next Step')
@@ -136,7 +125,7 @@ class Visualizer:
         self.circle.set_radius(a)
         
         self.probe_dots.set_offsets(probes)
-        colors = ['green' if self.engine.is_feasible(p) else 'red' for p in probes]
+        colors = ['green' if self.engine.in_boundaries(p) else 'red' for p in probes]
         self.probe_dots.set_color(colors)
         
         # Оновлення траєкторії
