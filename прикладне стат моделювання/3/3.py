@@ -23,13 +23,13 @@ class RandomSearchMath:
     
     def generate_probes(self, a, m):
 
-        # gamma = np.random.rand(m)
-        # print(gamma[0:5])
+        
+        
         gamma=[]
         for i in range(m):
             gamma.append( secrets.SystemRandom().random())
         gamma = np.array(gamma)
-        # print(gamma[0:5])
+        
         angles = 2 * np.pi * gamma
         
         xi_0 = np.column_stack((np.cos(angles), np.sin(angles)))
@@ -42,8 +42,64 @@ class RandomSearchMath:
         probes = self.current_x + a * xi
         
         return probes, xi
-    
-    def perform_step(self, a, m):
+    def perform_step(self, a, m, iteration_idx):
+        """One step of the algorithm with detailed output and boundary fallback."""
+        probes, directions = self.generate_probes(a, m)
+        
+        
+        valid_indices = [i for i, p in enumerate(probes) if self.in_boundaries(p)]
+        f_current = self.target_function(self.current_x)
+
+        print(f"\n--- Iteration k = {iteration_idx} ---")
+        print(f"Current point x_k: {np.round(self.current_x, 4)}")
+        print(f"f(x_k): {f_current:.6f}")
+        print(f"Drift w_k: {np.round(self.w, 4)}")
+
+        if not valid_indices:
+            print("Status: FAILED. All probe points are out of boundaries.")
+            return None, probes, None
+
+        
+        best_idx = valid_indices[np.argmin([self.target_function(probes[i]) for i in valid_indices])]
+        best_probe = probes[best_idx]
+        best_dir = directions[best_idx]
+        f_best = self.target_function(best_probe)
+        delta_f_probe = f_best - f_current
+
+        print(f"Best probe direction xi*: {np.round(best_dir, 4)}")
+        print(f"Improvement on probe: {delta_f_probe:.6f}")
+
+        
+        if f_best < f_current:
+            
+            step_vec = -(best_dir / a) * delta_f_probe
+            x_new = self.current_x + step_vec
+
+            
+            if not self.in_boundaries(x_new):
+                print("Warning: Working step out of bounds. Falling back to best_probe.")
+                x_new = best_probe
+            else:
+                print("Status: Working step successful.")
+
+            
+            actual_df = self.target_function(x_new) - f_current
+            delta_x = x_new - self.current_x
+            
+            
+            self.w = self.gamma3 * self.w - self.gamma4 * delta_x * actual_df
+            
+            self.current_x = x_new
+            self.history.append(self.current_x.copy())
+            
+            print(f"New point x_k+1: {np.round(x_new, 4)}")
+            print(f"Actual f change: {actual_df:.6f}")
+            return x_new, probes, best_probe
+        
+        else:
+            print("Status: No improvement found (f_best >= f_current).")
+            return None, probes, None
+    def perform_step_(self, a, m):
         probes, directions = self.generate_probes(a, m)
         
         valid_indices = [i for i, p in enumerate(probes) if self.in_boundaries(p)]
@@ -99,12 +155,12 @@ class Visualizer:
                                         bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
 
     def draw_base_map(self):
-        # Лінії рівня f(x)
+        
         x1, x2 = np.meshgrid(np.linspace(-1, 3.5, 100), np.linspace(-1, 3.5, 100))
         z = -x1 - 2*x2 + x2**2
         self.ax.contour(x1, x2, z, levels=25, cmap='viridis', alpha=0.4)
         
-        # Область допустимих значень (Feasible region)
+        
         pts = np.array([[0,0], [2,0], [1, 1.5], [0, 2]])
         polygon = plt.Polygon(pts, closed=True, color='gray', alpha=0.2, label='Допустима область')
         self.ax.add_patch(polygon)
@@ -118,9 +174,9 @@ class Visualizer:
         m = int(self.m_slider.val)
         
         old_x = self.engine.current_x.copy()
-        new_x, probes, best_p = self.engine.perform_step(a, m)
+        new_x, probes, best_p = self.engine.perform_step(a, m,len(self.engine.history)-1)
         
-        # Оновлення візуалізації кола та проб
+        
         self.circle.set_center(old_x)
         self.circle.set_radius(a)
         
@@ -128,11 +184,11 @@ class Visualizer:
         colors = ['green' if self.engine.in_boundaries(p) else 'red' for p in probes]
         self.probe_dots.set_color(colors)
         
-        # Оновлення траєкторії
+        
         hist = np.array(self.engine.history)
         self.current_plot.set_data(hist[:, 0], hist[:, 1])
         
-        # Текст статусу
+        
         f_val = self.engine.target_function(self.engine.current_x)
         status = (f"Крок: {len(self.engine.history)-1}\n"
                   f"x: [{self.engine.current_x[0]:.3f}, {self.engine.current_x[1]:.3f}]\n"
