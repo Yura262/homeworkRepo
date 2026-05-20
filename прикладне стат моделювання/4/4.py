@@ -72,7 +72,14 @@ n1, n2 = n // 2, n - (n // 2) # n1=10, n2=11
 y1, y2 = y[:n1], y[n1:]
 
 mean1, mean2 = np.mean(y1), np.mean(y2)
+
 var1, var2 = np.var(y1, ddof=1), np.var(y2, ddof=1)
+print(f"Cереднє першої половини:{mean1:.3f}")
+print(f"Cереднє другої половини:{mean2:.3f}")
+
+print(f"Дисперсія першої половини:{var1:.3f}")
+print(f"Дисперсія другої половини:{var2:.3f}")
+
 
 # Критерій Фішера 
 F_emp = max(var1, var2) / min(var1, var2)
